@@ -60,6 +60,10 @@ case "${1:-start}" in
       done
       export TF_H3_LIB="$PREFIX/tf-h3/libtf_h3.so"
     fi
+    # Optional Studio video path: release the H3 model after sampling and before VAE decode.
+    NODE="$PREFIX/ComfyUI/custom_nodes/studio_decode_cleanup"
+    mkdir -p "$NODE"
+    cp "$HERE/studio_decode_cleanup/__init__.py" "$NODE/__init__.py.$$" && mv -f "$NODE/__init__.py.$$" "$NODE/__init__.py"
     # two cards: MiniMax H3's bf16 transformer blocks from STUDIO_SPLIT_BLOCK on the second card (spark/gpus.py,
     # STUDIO_LAYER_SPLIT=on; off by default). Only with paired cards (STUDIO_GPUS): one card gets no extra node
     NODE="$PREFIX/ComfyUI/custom_nodes/studio_split_h3"

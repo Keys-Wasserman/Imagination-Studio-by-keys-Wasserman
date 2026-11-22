@@ -139,6 +139,30 @@ those nodes through ComfyUI's HTTP API as a separate program. The three LoRAs co
 - The LoRA: `akatz-ai/MiniMax-H3-Person-Remover-LoRA` on Hugging Face, under the MiniMax H3 Community License
   Agreement.
 
+## Fix faces: H3 FaceRefine, PixelAI H3 Face Fix, MaskVidExperiments and VOSR 2.0
+
+- **ComfyUI-H3-FaceRefine** by Carasibana: <https://github.com/Carasibana/ComfyUI-H3-FaceRefine>, commit
+  `d8521d14fe0d721d80cd9417fff5a559cbc21aba`. MIT License. Used unmodified (its face track and crop node and its
+  stitch node), cloned into ComfyUI's `custom_nodes` by `spark/setup-workflows.sh`.
+- **ComfyUI-H3-FaceFix-PixelAILabs** by PixelAI Labs: <https://github.com/Pixelailabs/ComfyUI-H3-FaceFix-PixelAILabs>,
+  commit `58301602a2f6ba54904c25c420367bfa9ffcf8b9`. MIT License. Its H3 Face Size Fade node scales each frame's
+  face paste by the source face size; the Studio loads the unmodified node from ComfyUI's `custom_nodes`.
+- **MaskVidExperiments** by drozbay: <https://github.com/drozbay/MaskVidExperiments>, commit
+  `c32ed8c17e6fe892a174ebf25fe98b1317de97fb`. GNU General Public License v3.0. Used unmodified (MVEx Mask Cleanup
+  and MVEx Mask To Latent Space), talked to over ComfyUI's API; none of its code is in this pack.
+- **ComfyUI-VOSR2** by ylchen333: <https://github.com/ylchen333/ComfyUI-VOSR2>, commit
+  `6a21810b3f4f1a0ffc477c55330db0ac03c671f0`. Apache License 2.0. Used unmodified.
+- **VOSR 2.0** weights by CSWRY: `CSWRY/VOSR` on Hugging Face at revision `f24b3061b7f350b81e1907bdcfc27f71fb4ff3f3`
+  (`VOSR2/`, `Qwen-Image-vae-2d/`, and DINOv2-L from `torch_cache/`, converted to safetensors on this machine),
+  Apache License 2.0; the Qwen-Image 2D VAE is CSWRY's conversion of the Wan2.1 / Qwen-Image VAE, and DINOv2 is
+  Meta's (Apache-2.0). Checked by SHA-256 when downloaded, not redistributed.
+- **face_yolov8n.pt** by Bingsu: `Bingsu/adetailer` on Hugging Face at revision
+  `53cc19de382014514d9d4038601d261a7faa9b7b`, SHA-256
+  `70b640f8f60b1cf0dcc72f30caf3da9495eb2fb6509da48c53374ad6806e6a9c` (model card: Apache-2.0).
+- **Ultralytics** 8.4.215 (AGPL-3.0) and **OpenCV** (`opencv-python-headless` 4.13.0.92, Apache-2.0), with
+  `ultralytics-thop` 2.2.4 (AGPL-3.0): installed from PyPI into `$PREFIX/face-site`, a folder only the Studio's
+  ComfyUI process reads, not into the Studio's venv; not shipped in this pack.
+
 ## SAM 3.1 (Meta)
 
 - **Segment Anything Model 3.1** by Meta, in the single-file build `checkpoints/sam3.1_multiplex_fp16.safetensors`

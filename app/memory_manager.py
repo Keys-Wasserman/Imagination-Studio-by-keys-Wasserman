@@ -42,7 +42,7 @@ COOLDOWN_S = 10.0   # between two releases of the watch: a release takes a few s
 FOREIGN_MIN_MB = 1024  # a program smaller than this is not named
 RENDER_POLL_S = 0.5    # the watch's poll while a job runs here
 STALL_SOME_PCT = 10.0  # /proc/pressure/memory "some avg10": tasks waiting on memory this share of the time is the early sign
-GPU_FREE = {"export", "soundtrack", "finish", "graphics", "hlg", "beats"}  # ffmpeg and the like: no model loaded
+GPU_FREE = {"export", "soundtrack", "finish", "graphics", "hlg", "beats", "rea_video"}  # CPU tools: no Studio model loaded
 
 _modules: list = []
 

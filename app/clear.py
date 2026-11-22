@@ -21,6 +21,7 @@ from fastapi import APIRouter, HTTPException
 
 MEDIA = (".mp4", ".mov", ".png", ".jpg", ".jpeg", ".webp", ".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg")
 FOLDERS = {"renders": MEDIA, "exports": MEDIA, "scouts": MEDIA, "uploads": MEDIA, "qa": MEDIA, "sound": MEDIA,
+           "analysis": (".md", ".zip"),
            "voice": MEDIA, "music": (".wav",), "projects": (".mp4",), "slate": (".mp4",)}  # in a film's folder only its clips, never its project file
 # a YuE2 song's own folder beside it (music/<job>.yue2: its score and what it was made from), which goes with the song
 SONG_FOLDER = (".abc", ".npy", ".json", ".txt", ".mid", ".wav")

@@ -110,6 +110,15 @@ repository at a pinned commit when the Studio is installed; none of their code i
 - **Remove a person:** the Person Remover LoRA and H3 Relay (the windowed removal with its green mask and its relay
   of history frames, GPL-3.0) by Akatz Labs (akatz-ai); the person is found and followed by SAM 3.1 from Meta, in
   the build Comfy-Org repackaged for ComfyUI, under the SAM License.
+- **Fix faces:** the graph is the "MiniMax H3 R2V perfect face refine" ComfyUI workflow (2026-11-18; its maker is not
+  named in the file) from its face pass on. The face is tracked, cropped and stitched back by **Carasibana**'s
+  **ComfyUI-H3-FaceRefine** (MIT), modelled on ltdrdata's Impact Pack FaceDetailer. **PixelAI Labs**' **H3 Face Size Fade**
+  node (MIT) reduces the paste on close-ups and keeps the original face once it is large enough in the frame. The mask is
+  cleaned and brought to MiniMax H3's latent grid by **drozbay**'s **MaskVidExperiments** (GPL-3.0); the redrawn crops are
+  restored by **VOSR 2.0** from **CSWRY** (weights Apache-2.0) through **ylchen333**'s
+  **ComfyUI-VOSR2** nodes (Apache-2.0). The face is found by **Bingsu**'s YOLOv8 face detector (`face_yolov8n.pt`
+  from `Bingsu/adetailer`, Apache-2.0 card) run by **Ultralytics** (AGPL-3.0, installed beside ComfyUI, not shipped
+  here) and masked by SAM 3.1 from Meta; the redraw is **MiniMax H3** Ref2VA.
 - **Character Swap:** the idea and the app it comes from are Comfy Org's **Openjutsu** (comfy-openjutsu, MIT), built
   on **Akatz Labs**' (akatz-ai) H3 Character Swap workflow (MIT) and their **Character Swap LoRA** version 1.5 (MiniMax
   H3 Community License). It runs with **LightX2V**'s 8-step Turbo LoRA for MiniMax H3 (Apache-2.0), **SAM 3.1** from

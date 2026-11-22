@@ -139,6 +139,29 @@ if MAC:
     H3_VAE = MAC_FILES["vae"]
 QWEN = "qwen_image_2.1_turbo_bf16.safetensors"   # Qwen-Image-2.1-Turbo, the 8-step checkpoint
 QWEN_BASE = "qwen_image_2.1_bf16.safetensors"    # the 40-step base model, only when it has been downloaded
+
+def ready_h3_text_encoder() -> str:
+    """The complete H3 text encoder ComfyUI can load, including one on an extra model path.
+
+    A small-card install may keep its NVFP4 file elsewhere while the normal
+    FastH3-Comfy link has disappeared. ComfyUI's own list is authoritative.
+    """
+
+    have = call("/object_info/CLIPLoader")["CLIPLoader"]["input"]["required"]["clip_name"][0]
+    if H3_TEXT in have:
+        return H3_TEXT
+    regular = "qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
+    if H3_TEXT != regular:
+        sys.exit(f"ComfyUI does not list the selected H3 text encoder {H3_TEXT}")
+    complete = [name for name in have
+                if name.rsplit("/", 1)[-1].startswith("qwen3vl_32b_minimax_h3_")
+                and name.endswith(".safetensors") and "tail" not in name.lower()]
+    if len(complete) == 1:
+        return complete[0]
+    if not complete:
+        sys.exit("ComfyUI does not list a complete MiniMax H3 text encoder")
+    sys.exit("ComfyUI lists several MiniMax H3 text encoders; choose one in the Studio before rendering")
+
 QWEN_TEXT = "qwen3vl_8b_int8_convrot.safetensors"
 QWEN_VAE = "qwen_image_2.1_vae_bf16.safetensors"
 # the schedule saved with the Turbo checkpoint (model_index.json, sample_sigmas), then zero
@@ -414,6 +437,24 @@ class Saved(dict):
 # sound is made again from that track: brought back up, with a limiter when a peak would pass PEAK_DBFS, at the bit
 # rate the Mac build uses. AUDIO_EQ=off keeps ComfyUI's own track.
 HEADROOM_DB, PEAK_DBFS, SOUND_BITRATE = 12, -1.0, "256k"
+
+
+def release_before_decode(workflow: dict, enabled: bool) -> None:
+    """Opt in to unloading H3 after sampling, before both video and audio decode."""
+
+    if not enabled:
+        return
+    try:
+        node = call("/object_info/StudioDecodeRelease").get("StudioDecodeRelease")
+    except OSError:
+        node = None
+    if not node:
+        sys.exit("the Studio decode-release node is unavailable: restart this Studio's ComfyUI server")
+    workflow["98"] = {"class_type": "StudioDecodeRelease", "inputs": {"samples": ["12", 0]}}
+    for key in ("13", "14"):
+        if workflow.get(key, {}).get("inputs", {}).get("samples") == ["12", 0]:
+            workflow[key]["inputs"]["samples"] = ["98", 0]
+    print("[tensorfold] releasing the H3 model before VAE decode (experimental)", flush=True)
 
 
 def save_sound(workflow: dict, audio: list, prefix: str) -> None:
@@ -749,7 +790,7 @@ def reference(args) -> None:
     model = ["1", 0]
     w = {
         "1": {"class_type": "UNETLoader", "inputs": {"unet_name": name, "weight_dtype": "default"}},
-        "3": {"class_type": "CLIPLoader", "inputs": {"clip_name": H3_TEXT, "type": "minimax", "device": "default"}},
+        "3": {"class_type": "CLIPLoader", "inputs": {"clip_name": ready_h3_text_encoder(), "type": "minimax", "device": "default"}},
         "4": {"class_type": "VAELoader", "inputs": {"vae_name": H3_VAE}},
         "5": {"class_type": "VAELoader", "inputs": {"vae_name": H3_AUDIO_VAE}},
         "6": {"class_type": "MiniMaxH3ReferenceToVideo",
@@ -809,6 +850,7 @@ def reference(args) -> None:
     w["12"] = {"class_type": "SamplerCustomAdvanced",
                "inputs": {"noise": ["8", 0], "guider": ["11", 0], "sampler": ["9", 0], "sigmas": ["10", 0],
                           "latent_image": ["6", 1]}}
+    release_before_decode(w, args.decode_unload)
     save_sound(w, ["14", 0], w["16"]["inputs"]["filename_prefix"] + "_sound")
     cropped = crop_frames(w, args.crop, args.width, args.height) if args.crop else True
     kind = "Ref2VA with the Turbo adapter" if mode == "turbo" else "Ref2VA"
@@ -896,7 +938,7 @@ def video(args) -> None:
         "1": {"class_type": "UNETLoader", "inputs": {"unet_name": H3_FL2VA if base else FASTH3[args.weights], "weight_dtype": "default"}},
         # FastH3's schedule: video shift 10, audio shift 3 (fastvideo_inference.json); MiniMax H3's own: 12 and 3
         "2": {"class_type": "MiniMaxH3SigmaShift", "inputs": {"model": ["1", 0], "shift_video": 12.0 if base else 10.0, "shift_audio": 3.0}},
-        "3": {"class_type": "CLIPLoader", "inputs": {"clip_name": H3_TEXT, "type": "minimax", "device": "default"}},
+        "3": {"class_type": "CLIPLoader", "inputs": {"clip_name": ready_h3_text_encoder(), "type": "minimax", "device": "default"}},
         "4": {"class_type": "VAELoader", "inputs": {"vae_name": H3_VAE}},
         "5": {"class_type": "VAELoader", "inputs": {"vae_name": H3_AUDIO_VAE}},
         "6": {"class_type": "MiniMaxH3ImageToVideo",
@@ -949,6 +991,7 @@ def video(args) -> None:
                                                           "denoise": 1.0}}
     w["11"] = {"class_type": "CFGGuider", "inputs": {"model": model, "positive": ["6", 0], "negative": ["7", 0],
                                                      "cfg": 1.0}}
+    release_before_decode(w, args.decode_unload)
     save_sound(w, ["14", 0], w["16"]["inputs"]["filename_prefix"] + "_sound")
     cropped = crop_frames(w, args.crop, args.width, args.height) if args.crop else True
     attention = f"sparse attention {sparsity}" if sparsity > 0 else "dense attention"
@@ -1494,6 +1537,8 @@ def main() -> None:
     v.add_argument("--last-frame", default="", help="an image the clip ends on (with or without --first-frame)")
     v.add_argument("--text-encoder", default=os.environ.get("TEXT_ENCODER") or "regular",
                    help="regular, or the file name of another MiniMax H3 text encoder in ComfyUI's text_encoders folder")
+    v.add_argument("--decode-unload", action="store_true", default=os.environ.get("STUDIO_DECODE_UNLOAD") == "1",
+                   help="experimental: unload H3 after sampling, before the video and audio VAEs decode")
     v.add_argument("--crop", default="", help="WxH centre crop of the finished clip")
     v.add_argument("--weights", choices=sorted(FASTH3), default=os.environ.get("SPARK_WEIGHTS", "bf16"))
     v.add_argument("--engine", choices=("tensorfold", "comfy"),
